@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/mvc
+		http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd" default-lazy-init="true">
+
+
+    <!-- 使用MethodInvokingJobDetailFactoryBean，任务类可以不实现Job接口，通过targetMethod指定调用方法-->
+    <!-- 定义目标bean和bean中的方法 -->
+    <bean id="methodJob" class="org.sekill.quratz.SpringQtz"/>
+    <bean id="simpleJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+        <property name="targetObject" ref="methodJob"/>
+        <property name="targetMethod" value="executeMethod"/>
+        <property name="concurrent" value="false"/>
+    </bean>
+
+    <bean id="anotherBean" class="org.sekill.quratz.AnotherBean"/>
+    <bean id="complexJobDetail" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+        <property name="jobClass" value="org.sekill.quratz.ScheduleJob"/>
+        <property name="jobDataAsMap">
+            <map>
+                <entry key="anotherBean" value-ref="anotherBean"/>
+            </map>
+        </property>
+        <property name="durability" value="true"/>
+    </bean>
+
+    <!-- ======================== 调度触发器simple ======================== -->
+    <bean id="simpleTriggerBean" class="org.springframework.scheduling.quartz.SimpleTriggerFactoryBean">
+        <property name="jobDetail" ref="simpleJobDetail"/>
+        <property name="startDelay" value="2000"/>
+        <property name="repeatInterval" value="6000"/>
+    </bean>
+
+    <!-- ======================== 调度触发器Cron ======================== -->
+    <bean id="CronTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail" ref="complexJobDetail"/>
+        <property name="cronExpression" value="0/5 * * ? * * *" />
+    </bean>
+
+    <!-- ======================== 调度工厂 ======================== -->
+    <bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="triggers">
+            <list>
+                <ref bean="simpleTriggerBean"/>
+                <ref bean="CronTriggerBean"/>
+            </list>
+        </property>
+    </bean>
+</beans>
